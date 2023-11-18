@@ -7,7 +7,9 @@ import (
 )
 
 type Config struct {
-	TelegramBotToken string `env:"BOT_TOKEN,required""`
+	TelegramBotToken string `env:"BOT_TOKEN,required"`
+	AbstractAPIKey   string `env:"ABSTRACT_API_KEY"`
+	BaseURL          string `env:"BASE_URL"`
 }
 
 var (
@@ -15,7 +17,7 @@ var (
 	once sync.Once
 )
 
-func MustLoad(path string) Config {
+func MustLoad() Config {
 	once.Do(func() {
 		err := env.Parse(&cfg)
 		if err != nil {

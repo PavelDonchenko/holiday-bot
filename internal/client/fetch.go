@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/rest"
 )
@@ -29,26 +30,25 @@ var countryCodes = map[string]string{
 
 type Client struct {
 	httpClient rest.BaseClient
+	cfg        config.Config
 }
 
-func New(baseURL string) *Client {
-	return &Client{httpClient: rest.BaseClient{
-		BaseURL: baseURL,
-		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
-	}}
+func New(cfg config.Config) *Client {
+	return &Client{
+		cfg: cfg,
+		httpClient: rest.BaseClient{
+			BaseURL: cfg.BaseURL,
+			HTTPClient: &http.Client{
+				Timeout: 10 * time.Second,
+			},
+		}}
 }
 
-type Fetcher interface {
-	GetHolidays(date time.Time, country, apiKey string) ([]model.Holiday, error)
-}
-
-func (c *Client) GetHolidays(date time.Time, country, apiKey string) ([]model.Holiday, error) {
+func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, error) {
 	filters := []rest.FilterOptions{
 		{
 			Field:  apikeyParam,
-			Values: []string{apiKey},
+			Values: []string{c.cfg.AbstractAPIKey},
 		},
 		{
 			Field:  countryParam,

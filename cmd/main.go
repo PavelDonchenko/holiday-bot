@@ -27,7 +27,7 @@ func main() {
 
 	log.Printf("Authorized on account %s", botAPI.Self.UserName)
 
-	rClient := client.New(cfg.BaseURL)
+	rClient := client.New(cfg)
 
 	holidayBot := bot.New(botAPI, cfg, rClient)
 

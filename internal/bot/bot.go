@@ -2,7 +2,6 @@ package bot
 
 import (
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -10,11 +9,11 @@ const updateConfigTimeout = 60
 
 type Bot struct {
 	api     *tgbotapi.BotAPI
-	fetcher client.Fetcher
+	fetcher Fetcher
 	cfg     config.Config
 }
 
-func New(api *tgbotapi.BotAPI, cfg config.Config, fetcher client.Fetcher) *Bot {
+func New(api *tgbotapi.BotAPI, cfg config.Config, fetcher Fetcher) *Bot {
 	return &Bot{
 		api:     api,
 		cfg:     cfg,
@@ -36,10 +35,6 @@ func (b *Bot) Run() {
 }
 
 func (b *Bot) handleMessage(message *tgbotapi.Message) {
-	if message == nil {
-		return
-	}
-
 	switch message.Text {
 	case "🇺🇸 USA", "🇬🇧 UK", "🇨🇦 Canada", "🇫🇷 France", "🇩🇪 Germany", "🇯🇵 Japan":
 		b.handleGetHolidays(message)

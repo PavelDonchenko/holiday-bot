@@ -10,6 +10,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+type Fetcher interface {
+	GetHolidays(date time.Time, country string) ([]model.Holiday, error)
+}
+
 func (b *Bot) handleFlags(message *tgbotapi.Message) {
 	countriesKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
@@ -37,7 +41,7 @@ func (b *Bot) handleFlags(message *tgbotapi.Message) {
 func (b *Bot) handleGetHolidays(message *tgbotapi.Message) {
 	now := time.Now()
 
-	holidays, err := b.fetcher.GetHolidays(now, message.Text, b.cfg.AbstractAPIKey)
+	holidays, err := b.fetcher.GetHolidays(now, message.Text)
 	if err != nil {
 		log.Print(err)
 		return

@@ -9,6 +9,10 @@ import (
 	"path"
 )
 
+type Client interface {
+	SendRequest(req *http.Request) (*APIResponse, error)
+	BuildURL(resource string, filters []FilterOptions) (string, error)
+}
 type BaseClient struct {
 	BaseURL    string
 	HTTPClient *http.Client

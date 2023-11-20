@@ -31,6 +31,8 @@ linters-settings:
       - commentedOutCode
   gocyclo:
     min-complexity: 40
+  goimports:
+    local-prefixes: git.foxminded.ua/foxstudent106361/holiday-bot
   golint:
     min-confidence: 0
   lll:

@@ -1,6 +1,7 @@
 .PHONY: lint, run, test, coverage, coverage_html
 lint:
 	gofmt -w .
+	goimports -local git.foxminded.ua/foxstudent106361/holiday-bot -w .
 	golangci-lint run
 	go vet ./...
 

@@ -1,44 +1,48 @@
 package bot
 
 import (
-	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 )
 
-const updateConfigTimeout = 60
+type Service interface {
+	HandleMessage(message *tgbotapi.Message) tgbotapi.MessageConfig
+}
 
 type Bot struct {
 	api     *tgbotapi.BotAPI
-	fetcher Fetcher
+	service Service
 	cfg     config.Config
+	log     logging.Logger
 }
 
-func New(api *tgbotapi.BotAPI, cfg config.Config, fetcher Fetcher) *Bot {
+func New(api *tgbotapi.BotAPI, cfg config.Config, service Service, log logging.Logger) *Bot {
 	return &Bot{
 		api:     api,
 		cfg:     cfg,
-		fetcher: fetcher,
+		log:     log,
+		service: service,
 	}
 }
 
 func (b *Bot) Run() {
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = updateConfigTimeout
+	u.Timeout = b.cfg.Telegram.UpdateConfigTimeout
 
 	updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
 		if update.Message != nil {
-			b.handleMessage(update.Message)
-		}
-	}
-}
+			msg := b.service.HandleMessage(update.Message)
 
-func (b *Bot) handleMessage(message *tgbotapi.Message) {
-	switch message.Text {
-	case "🇺🇸 USA", "🇬🇧 UK", "🇨🇦 Canada", "🇫🇷 France", "🇩🇪 Germany", "🇯🇵 Japan":
-		b.handleGetHolidays(message)
-	default:
-		b.handleFlags(message)
+			_, err := b.api.Send(msg)
+			if err != nil {
+				b.log.Errorf("error sending message, err: %v", err)
+				return
+			}
+		}
 	}
 }

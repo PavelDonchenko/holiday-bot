@@ -8,7 +8,7 @@ import (
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/rest"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/client"
 )
 
 const (
@@ -29,15 +29,15 @@ var countryCodes = map[string]string{
 }
 
 type Client struct {
-	httpClient rest.BaseClient
+	httpClient client.BaseClient
 	cfg        config.Config
 }
 
 func New(cfg config.Config) *Client {
 	return &Client{
 		cfg: cfg,
-		httpClient: rest.BaseClient{
-			BaseURL: cfg.BaseURL,
+		httpClient: client.BaseClient{
+			BaseURL: cfg.API.BaseURL,
 			HTTPClient: &http.Client{
 				Timeout: 10 * time.Second,
 			},
@@ -45,10 +45,10 @@ func New(cfg config.Config) *Client {
 }
 
 func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, error) {
-	filters := []rest.FilterOptions{
+	filters := []client.FilterOptions{
 		{
 			Field:  apikeyParam,
-			Values: []string{c.cfg.AbstractAPIKey},
+			Values: []string{c.cfg.API.AbstractAPIKey},
 		},
 		{
 			Field:  countryParam,

@@ -6,16 +6,22 @@ import (
 	"github.com/caarlos0/env"
 )
 
-type Config struct {
-	TelegramBotToken string `env:"BOT_TOKEN,required"`
-	AbstractAPIKey   string `env:"ABSTRACT_API_KEY"`
-	BaseURL          string `env:"BASE_URL"`
-}
-
 var (
 	cfg  Config
 	once sync.Once
 )
+
+type Config struct {
+	Telegram struct {
+		TelegramBotToken    string `env:"BOT_TOKEN,required"`
+		BotDebug            bool   `env:"BOT_DEBUG"`
+		UpdateConfigTimeout int    `env:"UPDATE_CONFIG_TIMEOUT"`
+	}
+	API struct {
+		BaseURL        string `env:"BASE_URL"`
+		AbstractAPIKey string `env:"ABSTRACT_API_KEY"`
+	}
+}
 
 func MustLoad() Config {
 	once.Do(func() {

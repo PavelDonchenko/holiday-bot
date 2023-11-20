@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
+
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/rest"
-	"github.com/joho/godotenv"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/client"
 )
 
 func TestClient_GetHolidays(t *testing.T) {
@@ -17,7 +18,7 @@ func TestClient_GetHolidays(t *testing.T) {
 	_ = godotenv.Load("../../.env")
 	cfg := config.MustLoad()
 	type fields struct {
-		httpClient rest.BaseClient
+		httpClient client.BaseClient
 	}
 
 	type args struct {
@@ -33,7 +34,7 @@ func TestClient_GetHolidays(t *testing.T) {
 	}{
 		{
 			name: "OK EXIST HOLIDAYS USA",
-			fields: fields{httpClient: rest.BaseClient{
+			fields: fields{httpClient: client.BaseClient{
 				BaseURL: "https://holidays.abstractapi.com/v1/",
 				HTTPClient: &http.Client{
 					Timeout: 10 * time.Second,
@@ -49,7 +50,7 @@ func TestClient_GetHolidays(t *testing.T) {
 		},
 		{
 			name: "OK NO HOLIDAY",
-			fields: fields{httpClient: rest.BaseClient{
+			fields: fields{httpClient: client.BaseClient{
 				BaseURL: "https://holidays.abstractapi.com/v1/",
 				HTTPClient: &http.Client{
 					Timeout: 10 * time.Second,
@@ -63,7 +64,7 @@ func TestClient_GetHolidays(t *testing.T) {
 		},
 		{
 			name: "ERROR WRONG URL",
-			fields: fields{httpClient: rest.BaseClient{
+			fields: fields{httpClient: client.BaseClient{
 				BaseURL: "https://WRONGURL",
 				HTTPClient: &http.Client{
 					Timeout: 10 * time.Second,
@@ -79,6 +80,7 @@ func TestClient_GetHolidays(t *testing.T) {
 	for _, tt := range tests {
 		time.Sleep(1 * time.Second)
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			c := &Client{
 				httpClient: tt.fields.httpClient,
 				cfg:        cfg,

@@ -1,20 +1,31 @@
-package bot
+package handler
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 )
+
+type Handler struct {
+	log     logging.Logger
+	fetcher Fetcher
+}
+
+func New(log logging.Logger, fetcher Fetcher) *Handler {
+	return &Handler{log: log, fetcher: fetcher}
+}
 
 type Fetcher interface {
 	GetHolidays(date time.Time, country string) ([]model.Holiday, error)
 }
 
-func (b *Bot) handleFlags(message *tgbotapi.Message) {
+func (h *Handler) HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig {
 	countriesKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("🇺🇸 USA"),
@@ -31,27 +42,21 @@ func (b *Bot) handleFlags(message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, "Choose a country:")
 	msg.ReplyMarkup = countriesKeyboard
 
-	_, err := b.api.Send(msg)
-	if err != nil {
-		log.Printf("error sending mesage, err: %v", err)
-		return
-	}
+	return msg
 }
 
-func (b *Bot) handleGetHolidays(message *tgbotapi.Message) {
+func (h *Handler) HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageConfig {
 	now := time.Now()
 
-	holidays, err := b.fetcher.GetHolidays(now, message.Text)
+	holidays, err := h.fetcher.GetHolidays(now, message.Text)
 	if err != nil {
-		log.Print(err)
-		return
+		h.log.Error(err)
+		return tgbotapi.MessageConfig{}
 	}
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, buildMsg(holidays, message.Text))
-	_, err = b.api.Send(msg)
-	if err != nil {
-		log.Println("Error sending message:", err)
-	}
+
+	return msg
 }
 
 func buildMsg(holidays []model.Holiday, country string) string {

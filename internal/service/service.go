@@ -2,18 +2,19 @@ package service
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 )
 
-type Handlers interface {
-	HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig
-	HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageConfig
+type Service interface {
+	HandleMessage(message *tgbotapi.Message) tgbotapi.MessageConfig
 }
 
 type Bot struct {
-	handlers Handlers
+	handlers handler.Handlers
 }
 
-func New(handlers Handlers) *Bot {
+func New(handlers handler.Handlers) *Bot {
 	return &Bot{handlers: handlers}
 }
 

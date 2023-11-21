@@ -3,28 +3,24 @@ package bot
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
-
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
-
-type Service interface {
-	HandleMessage(message *tgbotapi.Message) tgbotapi.MessageConfig
-}
 
 type Bot struct {
 	api     *tgbotapi.BotAPI
-	service Service
+	service service.Service
 	cfg     config.Config
 	log     logging.Logger
 }
 
-func New(api *tgbotapi.BotAPI, cfg config.Config, service Service, log logging.Logger) *Bot {
+func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, log logging.Logger) *Bot {
 	return &Bot{
 		api:     api,
 		cfg:     cfg,
 		log:     log,
-		service: service,
+		service: botService,
 	}
 }
 

@@ -7,10 +7,14 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
-
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
+
+type Handlers interface {
+	HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageConfig
+}
 
 type Handler struct {
 	log     logging.Logger

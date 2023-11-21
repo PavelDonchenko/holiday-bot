@@ -78,9 +78,9 @@ func TestClient_GetHolidays(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		t.Parallel()
 		time.Sleep(1 * time.Second)
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			c := &Client{
 				httpClient: tt.fields.httpClient,
 				cfg:        cfg,

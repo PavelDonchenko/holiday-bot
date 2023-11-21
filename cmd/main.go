@@ -1,33 +1,31 @@
 package main
 
 import (
-	"log"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
-
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/bot"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
 
 func main() {
+	logger := logging.GetLogger()
+
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("unable to load .env file: %e", err)
+		logger.Fatalf("unable to load .env file: %e", err)
 	}
 
 	cfg := config.MustLoad()
-
-	logger := logging.GetLogger()
+	logger.Debug("config: ", cfg)
 
 	botAPI, err := tgbotapi.NewBotAPI(cfg.Telegram.TelegramBotToken)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	botAPI.Debug = cfg.Telegram.BotDebug

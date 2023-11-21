@@ -8,6 +8,7 @@ import (
 	"path"
 )
 
+//go:generate mockery --name=Client --output=mock --case=underscore
 type Client interface {
 	SendRequest(req *http.Request) (*http.Response, error)
 	BuildURL(resource string, filters []FilterOptions) (string, error)

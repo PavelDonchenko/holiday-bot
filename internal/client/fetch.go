@@ -20,6 +20,7 @@ const (
 	dayParam     = "day"
 )
 
+//go:generate mockery --name=Fetcher --output=mock --case=underscore
 type Fetcher interface {
 	GetHolidays(date time.Time, country string) ([]model.Holiday, error)
 }
@@ -34,14 +35,14 @@ var countryCodes = map[string]string{
 }
 
 type Client struct {
-	httpClient client.BaseClient
+	httpClient client.Client
 	cfg        config.Config
 }
 
 func New(cfg config.Config) *Client {
 	return &Client{
 		cfg: cfg,
-		httpClient: client.BaseClient{
+		httpClient: &client.BaseClient{
 			BaseURL: cfg.API.BaseURL,
 			HTTPClient: &http.Client{
 				Timeout: 10 * time.Second,

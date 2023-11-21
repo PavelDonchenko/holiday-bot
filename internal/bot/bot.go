@@ -2,20 +2,20 @@ package bot
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
 
 type Bot struct {
 	api     *tgbotapi.BotAPI
 	service service.Service
 	cfg     config.Config
-	log     logging.Logger
+	log     *logrus.Logger
 }
 
-func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, log logging.Logger) *Bot {
+func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, log *logrus.Logger) *Bot {
 	return &Bot{
 		api:     api,
 		cfg:     cfg,
@@ -26,7 +26,7 @@ func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, lo
 
 func (b *Bot) Run() {
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = b.cfg.UpdateConfigTimeout
+	u.Timeout = b.cfg.Telegram.UpdateConfigTimeout
 
 	updates := b.api.GetUpdatesChan(u)
 

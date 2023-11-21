@@ -3,6 +3,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -18,6 +19,10 @@ const (
 	monthParam   = "month"
 	dayParam     = "day"
 )
+
+type Fetcher interface {
+	GetHolidays(date time.Time, country string) ([]model.Holiday, error)
+}
 
 var countryCodes = map[string]string{
 	"🇺🇸 USA":     "US",
@@ -37,7 +42,7 @@ func New(cfg config.Config) *Client {
 	return &Client{
 		cfg: cfg,
 		httpClient: client.BaseClient{
-			BaseURL: cfg.BaseURL,
+			BaseURL: cfg.API.BaseURL,
 			HTTPClient: &http.Client{
 				Timeout: 10 * time.Second,
 			},
@@ -48,7 +53,7 @@ func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, e
 	filters := []client.FilterOptions{
 		{
 			Field:  apikeyParam,
-			Values: []string{c.cfg.AbstractAPIKey},
+			Values: []string{c.cfg.API.AbstractAPIKey},
 		},
 		{
 			Field:  countryParam,
@@ -83,19 +88,20 @@ func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, e
 		return nil, fmt.Errorf("error send request %w", err)
 	}
 
-	if !response.IsOk {
-		return nil, fmt.Errorf("response error, code %d, message: %s", response.StatusCode(), response.Error.Message)
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("response error, code %d", response.StatusCode)
 	}
 
-	respByte, err := response.ReadBody()
+	defer response.Body.Close()
+
+	bBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error read response body, err: %w", err)
 	}
 
 	var holidays []model.Holiday
 
-	err = json.Unmarshal(respByte, &holidays)
-	if err != nil {
+	if err = json.Unmarshal(bBody, &holidays); err != nil {
 		return nil, fmt.Errorf("error decode response body, err: %w", err)
 	}
 

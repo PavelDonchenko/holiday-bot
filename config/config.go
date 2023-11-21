@@ -13,8 +13,8 @@ var (
 
 type (
 	Config struct {
-		API
-		Telegram
+		API      API      `env:"API"`
+		Telegram Telegram `env:"TELEGRAM"`
 	}
 
 	API struct {
@@ -31,8 +31,7 @@ type (
 
 func MustLoad() Config {
 	once.Do(func() {
-		err := env.Parse(&cfg)
-		if err != nil {
+		if err := env.Parse(&cfg); err != nil {
 			panic(err)
 		}
 	})

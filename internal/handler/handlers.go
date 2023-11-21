@@ -6,9 +6,11 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
 
 type Handlers interface {
@@ -17,16 +19,12 @@ type Handlers interface {
 }
 
 type Handler struct {
-	log     logging.Logger
-	fetcher Fetcher
+	log     *logrus.Logger
+	fetcher client.Fetcher
 }
 
-func New(log logging.Logger, fetcher Fetcher) *Handler {
+func New(log *logrus.Logger, fetcher client.Fetcher) *Handler {
 	return &Handler{log: log, fetcher: fetcher}
-}
-
-type Fetcher interface {
-	GetHolidays(date time.Time, country string) ([]model.Holiday, error)
 }
 
 func (h *Handler) HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig {
@@ -58,9 +56,7 @@ func (h *Handler) HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageC
 		return tgbotapi.MessageConfig{}
 	}
 
-	msg := tgbotapi.NewMessage(message.Chat.ID, buildMsg(holidays, message.Text))
-
-	return msg
+	return tgbotapi.NewMessage(message.Chat.ID, buildMsg(holidays, message.Text))
 }
 
 func buildMsg(holidays []model.Holiday, country string) string {

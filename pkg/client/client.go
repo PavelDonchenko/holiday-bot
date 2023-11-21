@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 )
 
 type Client interface {
-	SendRequest(req *http.Request) (*APIResponse, error)
+	SendRequest(req *http.Request) (*http.Response, error)
 	BuildURL(resource string, filters []FilterOptions) (string, error)
 }
 type BaseClient struct {
@@ -18,7 +17,7 @@ type BaseClient struct {
 	HTTPClient *http.Client
 }
 
-func (c *BaseClient) SendRequest(req *http.Request) (*APIResponse, error) {
+func (c *BaseClient) SendRequest(req *http.Request) (*http.Response, error) {
 	if c.HTTPClient == nil {
 		return nil, errors.New("no http client")
 	}
@@ -31,21 +30,7 @@ func (c *BaseClient) SendRequest(req *http.Request) (*APIResponse, error) {
 		return nil, fmt.Errorf("failed to send request. error: %w", err)
 	}
 
-	apiResponse := APIResponse{
-		IsOk:     true,
-		response: response,
-	}
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
-		apiResponse.IsOk = false
-		response.Body.Close()
-
-		var apiErr APIError
-		if err = json.NewDecoder(response.Body).Decode(&apiErr); err == nil {
-			apiResponse.Error = apiErr
-		}
-	}
-
-	return &apiResponse, nil
+	return response, nil
 }
 
 func (c *BaseClient) BuildURL(resource string, filters []FilterOptions) (string, error) {

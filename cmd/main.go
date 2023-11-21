@@ -3,27 +3,27 @@ package main
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/sirupsen/logrus"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/bot"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/logging"
 )
 
 func main() {
-	logger := logging.GetLogger()
+	logger := logrus.New()
 
 	cfg := config.MustLoad()
 	logger.Debug("config: ", cfg)
 
-	botAPI, err := tgbotapi.NewBotAPI(cfg.TelegramBotToken)
+	botAPI, err := tgbotapi.NewBotAPI(cfg.Telegram.TelegramBotToken)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	botAPI.Debug = cfg.BotDebug
+	botAPI.Debug = cfg.Telegram.BotDebug
 
 	logger.Infof("Authorized on account %s", botAPI.Self.UserName)
 

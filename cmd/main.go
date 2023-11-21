@@ -2,7 +2,7 @@ package main
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/bot"
@@ -15,20 +15,15 @@ import (
 func main() {
 	logger := logging.GetLogger()
 
-	err := godotenv.Load()
-	if err != nil {
-		logger.Fatalf("unable to load .env file: %e", err)
-	}
-
 	cfg := config.MustLoad()
 	logger.Debug("config: ", cfg)
 
-	botAPI, err := tgbotapi.NewBotAPI(cfg.Telegram.TelegramBotToken)
+	botAPI, err := tgbotapi.NewBotAPI(cfg.TelegramBotToken)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	botAPI.Debug = cfg.Telegram.BotDebug
+	botAPI.Debug = cfg.BotDebug
 
 	logger.Infof("Authorized on account %s", botAPI.Self.UserName)
 

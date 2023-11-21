@@ -37,7 +37,7 @@ func New(cfg config.Config) *Client {
 	return &Client{
 		cfg: cfg,
 		httpClient: client.BaseClient{
-			BaseURL: cfg.API.BaseURL,
+			BaseURL: cfg.BaseURL,
 			HTTPClient: &http.Client{
 				Timeout: 10 * time.Second,
 			},
@@ -48,7 +48,7 @@ func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, e
 	filters := []client.FilterOptions{
 		{
 			Field:  apikeyParam,
-			Values: []string{c.cfg.API.AbstractAPIKey},
+			Values: []string{c.cfg.AbstractAPIKey},
 		},
 		{
 			Field:  countryParam,

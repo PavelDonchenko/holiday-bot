@@ -26,7 +26,7 @@ func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, lo
 
 func (b *Bot) Run() {
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = b.cfg.Telegram.UpdateConfigTimeout
+	u.Timeout = b.cfg.UpdateConfigTimeout
 
 	updates := b.api.GetUpdatesChan(u)
 

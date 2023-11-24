@@ -15,6 +15,32 @@ type Fetcher struct {
 	mock.Mock
 }
 
+// GetForecast provides a mock function with given fields: city, lon, lat
+func (_m *Fetcher) GetForecast(city string, lon string, lat string) (*model.Forecast, error) {
+	ret := _m.Called(city, lon, lat)
+
+	var r0 *model.Forecast
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string, string, string) (*model.Forecast, error)); ok {
+		return rf(city, lon, lat)
+	}
+	if rf, ok := ret.Get(0).(func(string, string, string) *model.Forecast); ok {
+		r0 = rf(city, lon, lat)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Forecast)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(city, lon, lat)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetHolidays provides a mock function with given fields: date, country
 func (_m *Fetcher) GetHolidays(date time.Time, country string) ([]model.Holiday, error) {
 	ret := _m.Called(date, country)

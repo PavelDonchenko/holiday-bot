@@ -31,8 +31,14 @@ func (b *Bot) Run() {
 	updates := b.api.GetUpdatesChan(u)
 
 	for update := range updates {
+		var msg tgbotapi.MessageConfig
 		if update.Message != nil {
-			msg := b.service.HandleMessage(update.Message)
+			if update.Message.Location != nil {
+				msg = b.service.HandleForecastByLocation(update.Message)
+				msg.ParseMode = tgbotapi.ModeHTML
+			} else {
+				msg = b.service.HandleMessage(update.Message)
+			}
 
 			_, err := b.api.Send(msg)
 			if err != nil {

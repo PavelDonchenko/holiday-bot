@@ -12,7 +12,9 @@ import (
 type Client interface {
 	SendRequest(req *http.Request) (*http.Response, error)
 	BuildURL(resource string, filters []FilterOptions) (string, error)
+	SetBaseURL(url string)
 }
+
 type BaseClient struct {
 	BaseURL    string
 	HTTPClient *http.Client
@@ -51,6 +53,10 @@ func (c *BaseClient) BuildURL(resource string, filters []FilterOptions) (string,
 	}
 
 	return parsedURL.String(), nil
+}
+
+func (c *BaseClient) SetBaseURL(urlToSet string) {
+	c.BaseURL = urlToSet
 }
 
 func (c *BaseClient) Close() error {

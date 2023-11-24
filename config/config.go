@@ -17,8 +17,10 @@ type Config struct {
 }
 
 type API struct {
-	BaseURL        string `env:"BASE_URL"`
-	AbstractAPIKey string `env:"ABSTRACT_API_KEY"`
+	BaseAbstractURL string `env:"BASE_ABSTRACT_URL"`
+	BaseWeatherURL  string `env:"BASE_WEATHER_URL"`
+	AbstractAPIKey  string `env:"ABSTRACT_API_KEY"`
+	WeatherAPIKey   string `env:"WEATHER_API_KEY"`
 }
 
 type Telegram struct {

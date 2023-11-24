@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"strings"
 	"time"
 
@@ -13,9 +15,19 @@ import (
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 )
 
+const (
+	StartMenu   = "/start"
+	HolidayMenu = "/holiday"
+	WeatherMenu = "/weather"
+)
+
 type Handlers interface {
 	HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleStart(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleWeatherCommand(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleByCity(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbotapi.MessageConfig
 }
 
 type Handler struct {
@@ -59,6 +71,37 @@ func (h *Handler) HandleGetHolidays(message *tgbotapi.Message) tgbotapi.MessageC
 	return tgbotapi.NewMessage(message.Chat.ID, buildMsg(holidays, message.Text))
 }
 
+func (h *Handler) HandleStart(message *tgbotapi.Message) tgbotapi.MessageConfig {
+	return tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf(
+		"Type %s to see Holiday menu\nType %s to see Weather forecast menu", HolidayMenu, WeatherMenu))
+}
+
+func (h *Handler) HandleWeatherCommand(message *tgbotapi.Message) tgbotapi.MessageConfig {
+	msg := tgbotapi.NewMessage(message.Chat.ID, "Please send your location")
+
+	return msg
+}
+
+func (h *Handler) HandleByCity(message *tgbotapi.Message) tgbotapi.MessageConfig {
+	return tgbotapi.NewMessage(message.Chat.ID, "Enter the city")
+}
+
+func (h *Handler) HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbotapi.MessageConfig {
+	forecast, err := h.fetcher.GetForecast("", fmt.Sprint(message.Location.Longitude), fmt.Sprint(message.Location.Latitude))
+	if err != nil {
+		h.log.Error(err)
+		return tgbotapi.MessageConfig{}
+	}
+
+	msg, err := parseForecast(*forecast)
+	if err != nil {
+		h.log.Error(err)
+		return tgbotapi.MessageConfig{}
+	}
+
+	return tgbotapi.NewMessage(message.Chat.ID, msg)
+}
+
 func buildMsg(holidays []model.Holiday, country string) string {
 	if len(holidays) < 1 {
 		return fmt.Sprintf("Country %s, doesn't have any holiday today", country)
@@ -73,4 +116,26 @@ func buildMsg(holidays []model.Holiday, country string) string {
 	}
 
 	return sb.String()
+}
+
+func parseForecast(forecast model.Forecast) (string, error) {
+	htmlTemplate := `
+		<b>Weather Forecast for {{.Name}}</b>
+		Temperature: <b>{{.Main.Temp}}</b>
+		Feels like: <b>{{.Main.FeelsLike}}</b>
+		Min temp: <b>{{.Main.TempMin}}</b>
+		Max temp: <b>{{.Main.TempMax}}</b>
+		Pressure: <b>{{.Main.Pressure}}</b>
+	`
+	tmpl, err := template.New("weatherTemplate").Parse(htmlTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	var tplBuffer bytes.Buffer
+	if err := tmpl.Execute(&tplBuffer, forecast); err != nil {
+		return "", err
+	}
+
+	return tplBuffer.String(), nil
 }

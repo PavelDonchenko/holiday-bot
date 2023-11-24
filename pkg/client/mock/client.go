@@ -65,6 +65,11 @@ func (_m *Client) SendRequest(req *http.Request) (*http.Response, error) {
 	return r0, r1
 }
 
+// SetBaseURL provides a mock function with given fields: url
+func (_m *Client) SetBaseURL(url string) {
+	_m.Called(url)
+}
+
 type mockConstructorTestingTNewClient interface {
 	mock.TestingT
 	Cleanup(func())

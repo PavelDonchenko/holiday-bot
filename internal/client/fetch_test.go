@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	mocks "git.foxminded.ua/foxstudent106361/holiday-bot/pkg/client/mock"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/mock"
+
+	mocks "git.foxminded.ua/foxstudent106361/holiday-bot/pkg/client/mock"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
@@ -43,6 +44,7 @@ func TestClient_GetHolidays(t *testing.T) {
 			},
 			fetcher: func(t *testing.T, resp *http.Response) client.Client {
 				m := mocks.NewClient(t)
+				m.On("SetBaseURL", mock.Anything)
 				m.On("BuildURL", mock.Anything, mock.Anything).Return(mock.Anything, nil)
 				m.On("SendRequest", mock.AnythingOfType("*http.Request")).Return(resp, nil)
 
@@ -60,6 +62,7 @@ func TestClient_GetHolidays(t *testing.T) {
 			name: "ERROR BUILD URL",
 			fetcher: func(t *testing.T, resp *http.Response) client.Client {
 				m := mocks.NewClient(t)
+				m.On("SetBaseURL", mock.Anything)
 				m.On("BuildURL", mock.Anything, mock.Anything).Return("", errors.New("something went wrong"))
 
 				return m
@@ -75,6 +78,7 @@ func TestClient_GetHolidays(t *testing.T) {
 			name: "OK ERROR SEND REQUEST",
 			fetcher: func(t *testing.T, resp *http.Response) client.Client {
 				m := mocks.NewClient(t)
+				m.On("SetBaseURL", mock.Anything)
 				m.On("BuildURL", mock.Anything, mock.Anything).Return(mock.Anything, nil)
 				m.On("SendRequest", mock.AnythingOfType("*http.Request")).Return(nil, errors.New("something went wrong"))
 
@@ -94,6 +98,7 @@ func TestClient_GetHolidays(t *testing.T) {
 			},
 			fetcher: func(t *testing.T, resp *http.Response) client.Client {
 				m := mocks.NewClient(t)
+				m.On("SetBaseURL", mock.Anything)
 				m.On("BuildURL", mock.Anything, mock.Anything).Return(mock.Anything, nil)
 				m.On("SendRequest", mock.AnythingOfType("*http.Request")).Return(resp, nil)
 

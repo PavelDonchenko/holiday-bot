@@ -57,11 +57,11 @@ func New(cfg config.Config) *Client {
 }
 
 func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, error) {
-	c.httpClient.SetBaseURL(c.cfg.API.BaseAbstractURL)
+	c.httpClient.SetBaseURL(c.cfg.HolidayAPI.BaseHolidayURL)
 	filters := []client.FilterOptions{
 		{
 			Field:  apikeyParam,
-			Values: []string{c.cfg.API.AbstractAPIKey},
+			Values: []string{c.cfg.HolidayAPI.HolidayAPIKey},
 		},
 		{
 			Field:  countryParam,
@@ -117,7 +117,7 @@ func (c *Client) GetHolidays(date time.Time, country string) ([]model.Holiday, e
 }
 
 func (c *Client) GetForecast(city, lon, lat string) (*model.Forecast, error) {
-	c.httpClient.SetBaseURL(c.cfg.API.BaseWeatherURL)
+	c.httpClient.SetBaseURL(c.cfg.WeatherAPI.BaseWeatherURL)
 
 	var filters []client.FilterOptions
 
@@ -129,7 +129,7 @@ func (c *Client) GetForecast(city, lon, lat string) (*model.Forecast, error) {
 
 	filters = append(filters, client.FilterOptions{
 		Field:  keyParam,
-		Values: []string{c.cfg.API.WeatherAPIKey},
+		Values: []string{c.cfg.WeatherAPI.WeatherAPIKey},
 	}, client.FilterOptions{
 		Field:  unitsParam,
 		Values: []string{unit},

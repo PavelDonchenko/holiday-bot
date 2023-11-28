@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  bot:
+    build:
+      context: .
+    depends_on:
+      - mongodb
+    ports:
+      - "8001:8001"
+    restart: always
+
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - '6000:27017'
+    volumes:
+      - mongodb:/data/db
+
+volumes:
+  mongodb:
+
+
+
+
+

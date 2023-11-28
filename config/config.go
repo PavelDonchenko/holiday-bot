@@ -12,15 +12,19 @@ var (
 )
 
 type Config struct {
-	API      API      `env:"API"`
-	Telegram Telegram `env:"TELEGRAM"`
+	HolidayAPI HolidayAPI
+	WeatherAPI WeatherAPI
+	Telegram   Telegram
 }
 
-type API struct {
-	BaseAbstractURL string `env:"BASE_ABSTRACT_URL"`
-	BaseWeatherURL  string `env:"BASE_WEATHER_URL"`
-	AbstractAPIKey  string `env:"ABSTRACT_API_KEY"`
-	WeatherAPIKey   string `env:"WEATHER_API_KEY"`
+type HolidayAPI struct {
+	BaseHolidayURL string `env:"BASE_HOLIDAY_URL"`
+	HolidayAPIKey  string `env:"HOLIDAY_API_KEY"`
+}
+
+type WeatherAPI struct {
+	BaseWeatherURL string `env:"BASE_WEATHER_URL"`
+	WeatherAPIKey  string `env:"WEATHER_API_KEY"`
 }
 
 type Telegram struct {

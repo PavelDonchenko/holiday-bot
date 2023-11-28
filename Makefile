@@ -8,6 +8,9 @@ lint:
 run:
 	go run cmd/main.go
 
+compose_up:
+	docker-compose -f docker-compose.yml up --build --remove-orphans
+
 test:
 	go test -v -timeout 60s -coverprofile=coverage.out -cover ./...
 	go tool cover -func coverage.out

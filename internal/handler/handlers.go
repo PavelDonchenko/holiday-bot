@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"context"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 
@@ -33,15 +36,23 @@ type Handlers interface {
 	HandleShowTime(update *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleNotification(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleCreateNotification(message *tgbotapi.Message) tgbotapi.MessageConfig
+	HandleSaveTime(clb *tgbotapi.CallbackQuery) tgbotapi.MessageConfig
 }
 
 type Handler struct {
 	log     *logrus.Logger
 	fetcher client.Fetcher
+	db      storage.Storage
+	ctx     context.Context
 }
 
-func New(log *logrus.Logger, fetcher client.Fetcher) *Handler {
-	return &Handler{log: log, fetcher: fetcher}
+func New(ctx context.Context, log *logrus.Logger, fetcher client.Fetcher, db storage.Storage) *Handler {
+	return &Handler{
+		log:     log,
+		fetcher: fetcher,
+		db:      db,
+		ctx:     ctx,
+	}
 }
 
 func (h *Handler) HandleStart(message *tgbotapi.Message) tgbotapi.MessageConfig {

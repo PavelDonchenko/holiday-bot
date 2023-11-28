@@ -54,5 +54,5 @@ func (b Bot) UpdateLocation(message *tgbotapi.Message) tgbotapi.MessageConfig {
 }
 
 func (b Bot) UpdateCallback(clb *tgbotapi.CallbackQuery) tgbotapi.MessageConfig {
-	return tgbotapi.MessageConfig{}
+	return b.handlers.HandleSaveTime(clb)
 }

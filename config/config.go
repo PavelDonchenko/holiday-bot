@@ -15,6 +15,7 @@ type Config struct {
 	HolidayAPI HolidayAPI
 	WeatherAPI WeatherAPI
 	Telegram   Telegram
+	Mongo      Mongo
 }
 
 type HolidayAPI struct {
@@ -31,6 +32,12 @@ type Telegram struct {
 	TelegramBotToken    string `env:"BOT_TOKEN,required"`
 	BotDebug            bool   `env:"BOT_DEBUG"`
 	UpdateConfigTimeout int    `env:"UPDATE_CONFIG_TIMEOUT"`
+}
+
+type Mongo struct {
+	URL        string `env:"MONGODB_LOCAL_URI"`
+	Database   string `env:"DATABASE"`
+	Collection string `env:"COLLECTION"`
 }
 
 func MustLoad() Config {

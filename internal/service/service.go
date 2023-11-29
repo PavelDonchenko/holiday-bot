@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
@@ -12,6 +15,7 @@ type Service interface {
 	UpdateMessage(message *tgbotapi.Message) tgbotapi.MessageConfig
 	UpdateLocation(message *tgbotapi.Message) tgbotapi.MessageConfig
 	UpdateCallback(clb *tgbotapi.CallbackQuery) tgbotapi.MessageConfig
+	HandleRegularCommand(update chan tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
 }
 
 type Bot struct {
@@ -20,6 +24,18 @@ type Bot struct {
 
 func New(handlers handler.Handlers) *Bot {
 	return &Bot{handlers: handlers}
+}
+
+func (b Bot) HandleRegularCommand(update chan tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig) {
+	fmt.Println("handlecommand")
+	var msg tgbotapi.MessageConfig
+	for updateData := range update {
+		switch updateData.Message.Command() {
+		case handler.StartMenu:
+			msg = b.handlers.HandleStart(updateData.Message)
+			msgChan <- msg
+		}
+	}
 }
 
 func (b Bot) UpdateMessage(message *tgbotapi.Message) tgbotapi.MessageConfig {

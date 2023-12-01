@@ -6,12 +6,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (h *Handler) HandleSendLocation(message *tgbotapi.Message, addMsg string) tgbotapi.MessageConfig {
+func (h *Handler) HandleSendLocation(message *tgbotapi.Message) tgbotapi.MessageConfig {
 	btn := tgbotapi.KeyboardButton{
 		Text:            "Send location",
 		RequestLocation: true,
 	}
-	msg := tgbotapi.NewMessage(message.Chat.ID, LocationMsg+addMsg)
+	msg := tgbotapi.NewMessage(message.Chat.ID, LocationMsg)
 
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard([]tgbotapi.KeyboardButton{btn})
 

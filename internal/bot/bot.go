@@ -13,24 +13,33 @@ import (
 )
 
 type Bot struct {
-	api               *tgbotapi.BotAPI
-	service           service.Service
-	cfg               config.Config
-	log               *logrus.Logger
-	userState         model.State
-	subscribeCommands chan tgbotapi.Update
-	regularCommands   chan tgbotapi.Update
+	api                 *tgbotapi.BotAPI
+	service             service.Service
+	cfg                 config.Config
+	log                 *logrus.Logger
+	userState           model.State
+	subscribeCommands   chan tgbotapi.Update
+	unSubscribeCommands chan tgbotapi.Update
+	updateTimeCommands  chan tgbotapi.Update
+	regularCommands     chan tgbotapi.Update
+	holidayCommands     chan tgbotapi.Update
+	unsubscribeCommands chan tgbotapi.Update
+	weatherCommands     chan tgbotapi.Update
 }
 
 func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, log *logrus.Logger) *Bot {
 	return &Bot{
-		api:               api,
-		cfg:               cfg,
-		log:               log,
-		service:           botService,
-		userState:         make(map[int64]model.ActiveFlags),
-		regularCommands:   make(chan tgbotapi.Update),
-		subscribeCommands: make(chan tgbotapi.Update),
+		api:                 api,
+		cfg:                 cfg,
+		log:                 log,
+		service:             botService,
+		userState:           make(map[int64]model.ActiveFlags),
+		regularCommands:     make(chan tgbotapi.Update),
+		holidayCommands:     make(chan tgbotapi.Update),
+		subscribeCommands:   make(chan tgbotapi.Update),
+		unsubscribeCommands: make(chan tgbotapi.Update),
+		updateTimeCommands:  make(chan tgbotapi.Update),
+		weatherCommands:     make(chan tgbotapi.Update),
 	}
 }
 
@@ -47,8 +56,27 @@ func (b *Bot) Run() {
 
 	go func() {
 		for update := range updates {
-			if b.userState[update.Message.Chat.ID].UnsubscribeActiveFlag {
+			chatID := getChatID(update)
+
+			//need to fill flags with false value from the start and when user change flow in the middle of processing
+			if update.Message != nil {
+				if update.Message.IsCommand() {
+					b.userState[chatID] = model.ActiveFlags{}
+				}
+			}
+
+			if b.userState[chatID].UnsubscribeActiveFlag {
+				channelToSend = b.unsubscribeCommands
+			} else if b.userState[chatID].SubscribeActiveFlag {
 				channelToSend = b.subscribeCommands
+			} else if b.userState[chatID].HolidayActiveFlag {
+				channelToSend = b.holidayCommands
+			} else if b.userState[chatID].WeatherActiveFlag {
+				channelToSend = b.weatherCommands
+			} else if b.userState[chatID].WeatherActiveFlag {
+				channelToSend = b.weatherCommands
+			} else if b.userState[chatID].UpdateTimeActiveFlag {
+				channelToSend = b.updateTimeCommands
 			} else {
 				channelToSend = b.regularCommands
 			}
@@ -57,44 +85,93 @@ func (b *Bot) Run() {
 		}
 	}()
 
-	go b.service.HandleRegularCommand(channelToSend, b.userState, msgChan)
-
-	fmt.Println("I here")
-	select {
-	case msg := <-msgChan:
-		_, err := b.api.Send(msg)
-		if err != nil {
-			b.log.Errorf("error sending message, err: %v", err)
-			return
+	go func() {
+		for update := range b.regularCommands {
+			b.service.UpdateRegularCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
 		}
-	}
+	}()
+
+	go func() {
+		for update := range b.holidayCommands {
+			b.service.UpdateHolidayCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
+		}
+	}()
+
+	go func() {
+		for update := range b.weatherCommands {
+			b.service.UpdateWeatherCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
+		}
+	}()
+
+	go func() {
+		for update := range b.subscribeCommands {
+			b.service.UpdateSubscribeCommand(&update, b.userState, msgChan)
+		}
+	}()
+
+	go func() {
+		for update := range b.unsubscribeCommands {
+			b.service.UpdateUnsubscribeCommand(&update, b.userState, msgChan)
+		}
+	}()
+
+	go func() {
+		for update := range b.updateTimeCommands {
+			b.service.UpdateModifyTimeCommand(&update, b.userState, msgChan)
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case msg := <-msgChan:
+				fmt.Println("current state:", b.userState)
+				_, err := b.api.Send(msg)
+				if err != nil {
+					b.log.Errorf("error sending message, err: %v", err)
+					return
+				}
+			}
+		}
+	}()
 }
 
-//var msg tgbotapi.MessageConfig
-//if update.Message != nil {
-//	if update.Message.Location != nil {
-//		msg = b.service.UpdateLocation(update.Message)
-//		msg.ParseMode = tgbotapi.ModeHTML
-//	} else {
-//		msg = b.service.UpdateMessage(update.Message)
-//	}
-//}
-//
-//if update.CallbackQuery != nil {
-//	msg = b.service.UpdateCallback(update.CallbackQuery)
-//}
-//
-//_, err := b.api.Send(msg)
-//if err != nil {
-//	b.log.Errorf("error sending message, err: %v", err)
-//	return
-//}
+func getChatID(update tgbotapi.Update) int64 {
+	var chatID int64
+	if update.Message != nil {
+		chatID = update.Message.Chat.ID
+	} else {
+		chatID = update.CallbackQuery.From.ID
+	}
+
+	return chatID
+}
 
 func (b *Bot) createMenu() {
 	cfg := tgbotapi.NewSetMyCommands(
 		tgbotapi.BotCommand{
 			Command:     handler.StartMenu,
 			Description: "Show menu",
+		},
+		tgbotapi.BotCommand{
+			Command:     handler.HolidayMenu,
+			Description: "Show today holiday",
+		},
+		tgbotapi.BotCommand{
+			Command:     handler.WeatherMenu,
+			Description: "Show current weather",
+		},
+		tgbotapi.BotCommand{
+			Command:     handler.SubscribeMenu,
+			Description: "Subscribe to weather forecast",
+		},
+		tgbotapi.BotCommand{
+			Command:     handler.UnsubscribeMenu,
+			Description: "Unsubscribe from weather forecast",
+		},
+		tgbotapi.BotCommand{
+			Command:     handler.UpdateTimeMenu,
+			Description: "Change notification time",
 		})
 
 	_, _ = b.api.Request(cfg)

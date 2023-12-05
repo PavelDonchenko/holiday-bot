@@ -2,15 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/db"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/worker"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sirupsen/logrus"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/db"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/bot"
@@ -50,19 +53,35 @@ func main() {
 
 	botService := service.New(handlers)
 
-	holidayBot := bot.New(botAPI, cfg, botService, logger)
+	if len(os.Args) < 2 {
+		usage()
+	}
 
-	holidayBot.Run()
-	logger.Info("Bot successfully created")
+	switch os.Args[1] {
+	case "bot":
+		holidayBot := bot.New(botAPI, cfg, botService, logger)
+
+		holidayBot.Run(ctx)
+		logger.Info("Bot successfully created")
+	case "worker":
+		w := worker.New(botAPI, mongoClient, cfg, logger, rClient)
+		go w.Run(ctx)
+		logger.Info("Worker successfully started")
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	<-quit
 
-	defer cancel()
+	cancel()
 
 	<-ctx.Done()
 
 	logger.Info("Shutting down")
+}
+
+func usage() {
+	fmt.Println("Usage: [bot|worker]")
+	os.Exit(1)
 }

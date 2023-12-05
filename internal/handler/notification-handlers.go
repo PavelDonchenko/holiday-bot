@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
 )
 
 func (h *Handler) HandleNotification(message *tgbotapi.Message) tgbotapi.MessageConfig {
@@ -28,20 +30,19 @@ func (h *Handler) HandleNotification(message *tgbotapi.Message) tgbotapi.Message
 	return msg
 }
 
-func (h *Handler) HandleShowTime(chatID int64, id string) tgbotapi.MessageConfig {
-	var keyboard [][]tgbotapi.InlineKeyboardButton
-	for hour := 0; hour < 24; hour++ {
-		buttonText := fmt.Sprintf("%02d:00", hour)
-		btn := tgbotapi.NewInlineKeyboardButtonData(buttonText, fmt.Sprintf("%s&%s", buttonText, id))
-		keyboard = append(keyboard, []tgbotapi.InlineKeyboardButton{btn})
-	}
-
-	replyKeyboard := tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-
-	msg := tgbotapi.NewMessage(chatID, "Please choose a notification time:")
-	msg.ReplyMarkup = replyKeyboard
+func (h *Handler) HandleGetTime(chatID int64) tgbotapi.MessageConfig {
+	msg := tgbotapi.NewMessage(chatID, "Please type the time you want to receive notification (IN '13:00' FORMAT):")
 
 	return msg
+}
+
+func (h *Handler) HandleDeleteLastSubscription() error {
+	err := h.db.DeleteLastSubscription(h.ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, error) {
@@ -50,6 +51,7 @@ func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, e
 		ChatID:    message.Chat.ID,
 		Longitude: utils.Round(message.Location.Longitude, 2),
 		Latitude:  utils.Round(message.Location.Latitude, 2),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	id, err := h.db.Save(h.ctx, sub)
@@ -61,8 +63,8 @@ func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, e
 	return id, nil
 }
 
-func (h *Handler) HandleSaveTime(clb *tgbotapi.CallbackQuery) error {
-	err := h.db.UpdateTime(h.ctx, clb.Data)
+func (h *Handler) HandleSaveTime(timeToSave, id string) error {
+	err := h.db.UpdateTime(h.ctx, timeToSave, id)
 	if err != nil {
 		h.log.Errorf("error save time, err: %v", err)
 		return err
@@ -95,12 +97,12 @@ func (h *Handler) HandleSendSubscriptions(message *tgbotapi.Message) tgbotapi.Me
 }
 
 func (h *Handler) HandleDeleteSub(clb *tgbotapi.CallbackQuery) error {
-	long, lat, time, err := parseLocationTime(clb.Data)
+	long, lat, notificationTime, err := parseLocationTime(clb.Data)
 	if err != nil {
 		return err
 	}
 
-	err = h.db.DeleteSubscription(h.ctx, long, lat, time)
+	err = h.db.DeleteSubscription(h.ctx, long, lat, notificationTime)
 	if err != nil {
 		return err
 	}
@@ -108,27 +110,13 @@ func (h *Handler) HandleDeleteSub(clb *tgbotapi.CallbackQuery) error {
 	return nil
 }
 
-func (h *Handler) HandleGetSubscriptionID(clb *tgbotapi.CallbackQuery) (string, error) {
-	long, lat, time, err := parseLocationTime(clb.Data)
+func (h *Handler) HandleGetLastSubscription() (model.Subscription, error) {
+	sub, err := h.db.GetLastSubscription(h.ctx)
 	if err != nil {
-		return "", err
+		return model.Subscription{}, err
 	}
 
-	id, err := h.db.GetSubscriptionByID(h.ctx, long, lat, time)
-	if err != nil {
-		return "", err
-	}
-
-	return id, nil
-}
-
-func (h *Handler) HandleUpdateTime(time string) error {
-
-	err := h.db.UpdateTime(h.ctx, time)
-	if err != nil {
-		return err
-	}
-	return nil
+	return sub, nil
 }
 
 func parseLocationTime(input string) (float64, float64, string, error) {

@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -25,7 +26,7 @@ func (h *Handler) HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbota
 		return tgbotapi.MessageConfig{}
 	}
 
-	msg, err := parseForecast(*forecast)
+	msg, err := utils.ParseForecast(*forecast)
 	if err != nil {
 		h.log.Error(err)
 		return tgbotapi.MessageConfig{}

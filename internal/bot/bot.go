@@ -1,12 +1,13 @@
 package bot
 
 import (
-	"fmt"
+	"context"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/sirupsen/logrus"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
@@ -19,7 +20,6 @@ type Bot struct {
 	log                 *logrus.Logger
 	userState           model.State
 	subscribeCommands   chan tgbotapi.Update
-	unSubscribeCommands chan tgbotapi.Update
 	updateTimeCommands  chan tgbotapi.Update
 	regularCommands     chan tgbotapi.Update
 	holidayCommands     chan tgbotapi.Update
@@ -43,7 +43,7 @@ func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, lo
 	}
 }
 
-func (b *Bot) Run() {
+func (b *Bot) Run(ctx context.Context) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = b.cfg.Telegram.UpdateConfigTimeout
 
@@ -58,7 +58,7 @@ func (b *Bot) Run() {
 		for update := range updates {
 			chatID := getChatID(update)
 
-			//need to fill flags with false value from the start and when user change flow in the middle of processing
+			// need to fill flags with false value from the start and when user change flow in the middle of processing
 			if update.Message != nil {
 				if update.Message.IsCommand() {
 					b.userState[chatID] = model.ActiveFlags{}
@@ -71,8 +71,6 @@ func (b *Bot) Run() {
 				channelToSend = b.subscribeCommands
 			} else if b.userState[chatID].HolidayActiveFlag {
 				channelToSend = b.holidayCommands
-			} else if b.userState[chatID].WeatherActiveFlag {
-				channelToSend = b.weatherCommands
 			} else if b.userState[chatID].WeatherActiveFlag {
 				channelToSend = b.weatherCommands
 			} else if b.userState[chatID].UpdateTimeActiveFlag {
@@ -116,21 +114,11 @@ func (b *Bot) Run() {
 	}()
 
 	go func() {
-		for update := range b.updateTimeCommands {
-			b.service.UpdateModifyTimeCommand(&update, b.userState, msgChan)
-		}
-	}()
-
-	go func() {
-		for {
-			select {
-			case msg := <-msgChan:
-				fmt.Println("current state:", b.userState)
-				_, err := b.api.Send(msg)
-				if err != nil {
-					b.log.Errorf("error sending message, err: %v", err)
-					return
-				}
+		for msg := range msgChan {
+			_, err := b.api.Send(msg)
+			if err != nil {
+				b.log.Errorf("error sending message, err: %v", err)
+				return
 			}
 		}
 	}()
@@ -168,10 +156,6 @@ func (b *Bot) createMenu() {
 		tgbotapi.BotCommand{
 			Command:     handler.UnsubscribeMenu,
 			Description: "Unsubscribe from weather forecast",
-		},
-		tgbotapi.BotCommand{
-			Command:     handler.UpdateTimeMenu,
-			Description: "Change notification time",
 		})
 
 	_, _ = b.api.Request(cfg)

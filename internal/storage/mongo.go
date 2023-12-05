@@ -2,20 +2,22 @@ package storage
 
 import (
 	"context"
-	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Storage interface {
 	Save(ctx context.Context, sub model.Subscription) (string, error)
-	UpdateTime(ctx context.Context, time string) error
+	UpdateTime(ctx context.Context, time, id string) error
 	GetSubscriptions(ctx context.Context, chatID int64) ([]model.Subscription, error)
-	GetSubscriptionByID(ctx context.Context, long, lat float64, time string) (string, error)
+	GetLastSubscription(ctx context.Context) (model.Subscription, error)
 	DeleteSubscription(ctx context.Context, long, lat float64, time string) error
+	DeleteLastSubscription(ctx context.Context) error
 }
 
 type Mongo struct {
@@ -35,14 +37,12 @@ func (m *Mongo) Save(ctx context.Context, sub model.Subscription) (string, error
 	return sub.ID, nil
 }
 
-func (m *Mongo) UpdateTime(ctx context.Context, time string) error {
-	id := strings.Split(time, "&")[1]
-	timeToSave := strings.Split(time, "&")[0]
+func (m *Mongo) UpdateTime(ctx context.Context, time, id string) error {
 	_, err := m.client.UpdateOne(
 		ctx,
-		bson.D{{"_id", id}},
+		bson.D{{Key: "_id", Value: id}},
 		bson.D{
-			{"$set", bson.D{{"notify_time", timeToSave}}}})
+			{Key: "$set", Value: bson.D{{Key: "notify_time", Value: time}}}})
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (m *Mongo) UpdateTime(ctx context.Context, time string) error {
 }
 
 func (m *Mongo) GetSubscriptions(ctx context.Context, chatID int64) ([]model.Subscription, error) {
-	cursor, err := m.client.Find(ctx, bson.D{{"chat_id", chatID}})
+	cursor, err := m.client.Find(ctx, bson.D{{Key: "chat_id", Value: chatID}})
 	if err != nil {
 		return nil, err
 	}
@@ -73,9 +73,9 @@ func (m *Mongo) GetSubscriptions(ctx context.Context, chatID int64) ([]model.Sub
 
 func (m *Mongo) DeleteSubscription(ctx context.Context, long, lat float64, time string) error {
 	filter := bson.D{
-		{"longitude", long},
-		{"latitude", lat},
-		{"notify_time", time},
+		{Key: "longitude", Value: long},
+		{Key: "latitude", Value: lat},
+		{Key: "notify_time", Value: time},
 	}
 
 	_, err := m.client.DeleteMany(ctx, filter)
@@ -86,19 +86,29 @@ func (m *Mongo) DeleteSubscription(ctx context.Context, long, lat float64, time 
 	return nil
 }
 
-func (m *Mongo) GetSubscriptionByID(ctx context.Context, long, lat float64, time string) (string, error) {
-	filter := bson.D{
-		{"longitude", long},
-		{"latitude", lat},
-		{"notify_time", time},
-	}
+func (m *Mongo) DeleteLastSubscription(ctx context.Context) error {
+	opt := options.FindOneAndDelete()
+	opt.SetSort(bson.D{{Key: "created_at", Value: -1}})
 
 	var sub model.Subscription
-
-	err := m.client.FindOne(ctx, filter).Decode(&sub)
+	err := m.client.FindOneAndDelete(ctx, bson.D{}, opt).Decode(&sub)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return sub.ID, nil
+	return nil
+}
+
+func (m *Mongo) GetLastSubscription(ctx context.Context) (model.Subscription, error) {
+	var sub model.Subscription
+
+	opt := options.FindOne()
+	opt.SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+	err := m.client.FindOne(ctx, bson.D{}, opt).Decode(&sub)
+	if err != nil {
+		return model.Subscription{}, err
+	}
+
+	return sub, nil
 }

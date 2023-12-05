@@ -16,6 +16,7 @@ type Config struct {
 	WeatherAPI WeatherAPI
 	Telegram   Telegram
 	Mongo      Mongo
+	Worker     Worker
 }
 
 type HolidayAPI struct {
@@ -38,6 +39,10 @@ type Mongo struct {
 	URL        string `env:"MONGODB_LOCAL_URI"`
 	Database   string `env:"DATABASE"`
 	Collection string `env:"COLLECTION"`
+}
+
+type Worker struct {
+	WorkerDuration int `env:"WORKER_DURATION"`
 }
 
 func MustLoad() Config {

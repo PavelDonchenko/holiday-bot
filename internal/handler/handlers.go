@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 )
@@ -16,7 +18,6 @@ const (
 	WeatherMenu     = "/weather"
 	SubscribeMenu   = "/subscribe"
 	UnsubscribeMenu = "/unsubscribe"
-	UpdateTimeMenu  = "/update"
 	AddNotifyBtn    = "Add notification"
 	UpdateNotifyBtn = "Update notification"
 	DeleteNotifyBtn = "Delete notification"
@@ -35,16 +36,16 @@ type Handlers interface {
 	HandleSendLocation(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbotapi.MessageConfig
 
-	HandleShowTime(chatID int64, id string) tgbotapi.MessageConfig
+	HandleGetTime(chatID int64) tgbotapi.MessageConfig
 	HandleNotification(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleCreateNotification(message *tgbotapi.Message) (string, error)
-	HandleSaveTime(clb *tgbotapi.CallbackQuery) error
+	HandleSaveTime(time string, id string) error
 
 	HandleSendSubscriptions(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleDeleteSub(clb *tgbotapi.CallbackQuery) error
+	HandleDeleteLastSubscription() error
 
-	HandleGetSubscriptionID(clb *tgbotapi.CallbackQuery) (string, error)
-	HandleUpdateTime(id string) error
+	HandleGetLastSubscription() (model.Subscription, error)
 }
 
 type Handler struct {

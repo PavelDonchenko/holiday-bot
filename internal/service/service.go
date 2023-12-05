@@ -1,12 +1,11 @@
 package service
 
 import (
-	"fmt"
 	"regexp"
-	"strings"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 )
@@ -17,7 +16,6 @@ type Service interface {
 	UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig)
 	UpdateSubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
 	UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
-	UpdateModifyTimeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
 }
 
 type Bot struct {
@@ -58,22 +56,14 @@ func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state
 
 		msgChan <- msg
 	case handler.UnsubscribeMenu:
-		fmt.Println("I here, message:", message)
 		msg := b.handlers.HandleSendSubscriptions(message)
 
 		activeFlags := state[chatID]
 		activeFlags.UnsubscribeActiveFlag = true
 		state[chatID] = activeFlags
-		fmt.Println("I here, msg:", msg)
 		msgChan <- msg
-	case handler.UpdateTimeMenu:
-		msg := b.handlers.HandleSendSubscriptions(message)
-
-		activeFlags := state[chatID]
-		activeFlags.UpdateTimeActiveFlag = true
-		state[chatID] = activeFlags
-
-		msgChan <- msg
+	default:
+		msgChan <- tgbotapi.NewMessage(message.Chat.ID, "unknown command")
 	}
 }
 
@@ -92,22 +82,38 @@ func (b Bot) UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state
 func (b Bot) UpdateSubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig) {
 	if update.Message != nil {
 		if update.Message.Location != nil {
-			id, err := b.handlers.HandleCreateNotification(update.Message)
+			_, err := b.handlers.HandleCreateNotification(update.Message)
 			if err != nil {
-				msgChan <- errMsg(update.Message.Chat.ID)
+				msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
 			}
-			msgChan <- b.handlers.HandleShowTime(update.Message.Chat.ID, id)
+			msgChan <- b.handlers.HandleGetTime(update.Message.Chat.ID)
 		}
 	}
 
-	if update.CallbackQuery != nil {
-		err := b.handlers.HandleSaveTime(update.CallbackQuery)
-		if err != nil {
-			msgChan <- errMsg(update.Message.Chat.ID)
+	if update.Message.Text != "" {
+		if !isValidTimeFormat(update.Message.Text) {
+			err := b.handlers.HandleDeleteLastSubscription()
+			if err != nil {
+				msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
+			}
+
+			msgChan <- errMsg(update.Message.Chat.ID, "wrong time format, please use correct ('08:00')")
+			state[update.Message.Chat.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
+			return
 		}
 
-		state[update.CallbackQuery.From.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
-		msgChan <- tgbotapi.NewMessage(update.CallbackQuery.From.ID, "Subscription successfully created")
+		sub, err := b.handlers.HandleGetLastSubscription()
+		if err != nil {
+			msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
+		}
+
+		err = b.handlers.HandleSaveTime(update.Message.Text, sub.ID)
+		if err != nil {
+			msgChan <- errMsg(update.Message.Chat.ID, "failed save time")
+		}
+
+		state[update.Message.Chat.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
+		msgChan <- tgbotapi.NewMessage(update.Message.Chat.ID, "Subscription successfully created")
 	}
 }
 
@@ -115,7 +121,7 @@ func (b Bot) UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State
 	if update.CallbackQuery != nil {
 		err := b.handlers.HandleDeleteSub(update.CallbackQuery)
 		if err != nil {
-			msgChan <- errMsg(update.Message.Chat.ID)
+			msgChan <- errMsg(update.Message.Chat.ID, "failed delete subscription")
 		}
 
 		state[update.CallbackQuery.From.ID] = model.ActiveFlags{UnsubscribeActiveFlag: false}
@@ -123,28 +129,8 @@ func (b Bot) UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State
 	}
 }
 
-func (b Bot) UpdateModifyTimeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig) {
-	var msg tgbotapi.MessageConfig
-	if isValidTimeFormat(strings.Split(update.CallbackQuery.Data, "&")[0]) {
-		err := b.handlers.HandleUpdateTime(update.CallbackQuery.Data)
-		if err != nil {
-			msgChan <- errMsg(update.CallbackQuery.From.ID)
-		}
-		state[update.CallbackQuery.From.ID] = model.ActiveFlags{UpdateTimeActiveFlag: false}
-		msgChan <- tgbotapi.NewMessage(update.CallbackQuery.From.ID, "Subscription successfully updated")
-	} else {
-		id, err := b.handlers.HandleGetSubscriptionID(update.CallbackQuery)
-		if err != nil {
-			msgChan <- errMsg(update.CallbackQuery.From.ID)
-		}
-		msg = b.handlers.HandleShowTime(update.CallbackQuery.From.ID, id)
-	}
-
-	msgChan <- msg
-}
-
-func errMsg(chatID int64) tgbotapi.MessageConfig {
-	return tgbotapi.NewMessage(chatID, "error")
+func errMsg(chatID int64, text string) tgbotapi.MessageConfig {
+	return tgbotapi.NewMessage(chatID, text)
 }
 
 func isValidTimeFormat(input string) bool {

@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"strings"
 	"time"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 )
 
 func (h *Handler) HandleFlags(message *tgbotapi.Message) tgbotapi.MessageConfig {
@@ -57,26 +56,4 @@ func buildMsg(holidays []model.Holiday, country string) string {
 	}
 
 	return sb.String()
-}
-
-func parseForecast(forecast model.Forecast) (string, error) {
-	htmlTemplate := `
-		<b>Weather Forecast for {{.Name}}</b>
-		Temperature: <b>{{.Main.Temp}}</b>
-		Feels like: <b>{{.Main.FeelsLike}}</b>
-		Min temp: <b>{{.Main.TempMin}}</b>
-		Max temp: <b>{{.Main.TempMax}}</b>
-		Pressure: <b>{{.Main.Pressure}}</b>
-	`
-	tmpl, err := template.New("weatherTemplate").Parse(htmlTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	var tplBuffer bytes.Buffer
-	if err := tmpl.Execute(&tplBuffer, forecast); err != nil {
-		return "", err
-	}
-
-	return tplBuffer.String(), nil
 }

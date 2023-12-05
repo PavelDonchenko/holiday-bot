@@ -14,8 +14,7 @@ services:
     image: mongo
     container_name: mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGODB_LOCAL_URI=${MONGODB_LOCAL_URI}
     restart: always
     env_file:
       - ./.env

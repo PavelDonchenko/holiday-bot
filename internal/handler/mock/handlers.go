@@ -145,13 +145,13 @@ func (_m *Handlers) HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbo
 	return r0
 }
 
-// HandleSaveTime provides a mock function with given fields: time, id
-func (_m *Handlers) HandleSaveTime(time string, id string) error {
-	ret := _m.Called(time, id)
+// HandleSaveTime provides a mock function with given fields: time, sub
+func (_m *Handlers) HandleSaveTime(time string, sub model.Subscription) error {
+	ret := _m.Called(time, sub)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, string) error); ok {
-		r0 = rf(time, id)
+	if rf, ok := ret.Get(0).(func(string, model.Subscription) error); ok {
+		r0 = rf(time, sub)
 	} else {
 		r0 = ret.Error(0)
 	}

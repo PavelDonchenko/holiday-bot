@@ -147,7 +147,13 @@ func TestUpdateSubscribeCommand(t *testing.T) {
 					Latitude:   43.43,
 					NotifyTime: time.Now(),
 				}, nil)
-				m.On("HandleSaveTime", "12:00", "111").Return(nil)
+				m.On("HandleSaveTime", "12:00", model.Subscription{
+					ID:         "111",
+					ChatID:     123,
+					Longitude:  23.23,
+					Latitude:   43.43,
+					NotifyTime: time.Now(),
+				}).Return(nil)
 				return m
 			},
 			update: &tgbotapi.Update{

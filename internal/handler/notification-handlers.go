@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
-
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/google/uuid"
+	"gopkg.in/ugjka/go-tz.v2/tz"
 )
 
 func (h *Handler) HandleGetTime(chatID int64) tgbotapi.MessageConfig {
@@ -41,13 +41,13 @@ func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, e
 	return id, nil
 }
 
-func (h *Handler) HandleSaveTime(timeToSave, id string) error {
-	t, err := time.Parse("15:04", timeToSave)
+func (h *Handler) HandleSaveTime(timeToSave string, sub model.Subscription) error {
+	t, err := timeToUTC(timeToSave, sub.Latitude, sub.Longitude)
 	if err != nil {
 		h.log.Errorf("error parse time, err: %v", err)
 		return err
 	}
-	if err := h.db.UpdateTime(h.ctx, t.UTC(), id); err != nil {
+	if err := h.db.UpdateTime(h.ctx, t, sub.ID); err != nil {
 		h.log.Errorf("error save time, err: %v", err)
 		return err
 	}
@@ -125,4 +125,29 @@ func parseLocationTime(input string) (float64, float64, string, error) {
 	timeValue := matches[3]
 
 	return longitude, latitude, timeValue, nil
+}
+
+func timeToUTC(userTime string, lat, lon float64) (time.Time, error) {
+	zone, err := tz.GetZone(tz.Point{
+		Lon: lon, Lat: lat,
+	})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	userTimeParsed, err := time.Parse("15:04", userTime)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	location, err := time.LoadLocation(zone[0])
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	userTimeWithZone := time.Date(0, 1, 1, userTimeParsed.Hour(), userTimeParsed.Minute(), 0, 0, location)
+
+	utcTime := userTimeWithZone.UTC()
+
+	return utcTime, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
@@ -88,7 +89,7 @@ func TestHandleSendSubscriptions(t *testing.T) {
 				m.On("GetSubscriptions", ctx, mock.Anything).Return([]model.Subscription{{
 					Longitude:  22.2,
 					Latitude:   33.3,
-					NotifyTime: "12:00",
+					NotifyTime: time.Now(),
 				}}, nil)
 				return m
 			},

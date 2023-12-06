@@ -99,7 +99,7 @@ func (b Bot) UpdateSubscribeCommand(update *tgbotapi.Update, state model.State) 
 			return errMsg(update.Message.Chat.ID, "failed save subscription")
 		}
 
-		if err = b.handlers.HandleSaveTime(update.Message.Text, sub.ID); err != nil {
+		if err = b.handlers.HandleSaveTime(update.Message.Text, sub); err != nil {
 			return errMsg(update.Message.Chat.ID, "failed save time")
 		}
 

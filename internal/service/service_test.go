@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"testing"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +145,7 @@ func TestUpdateSubscribeCommand(t *testing.T) {
 					ChatID:     123,
 					Longitude:  23.23,
 					Latitude:   43.43,
-					NotifyTime: "13:00",
+					NotifyTime: time.Now(),
 				}, nil)
 				m.On("HandleSaveTime", "12:00", "111").Return(nil)
 				return m
@@ -161,7 +162,6 @@ func TestUpdateSubscribeCommand(t *testing.T) {
 			name: "validation error",
 			handlers: func(t *testing.T) handler.Handlers {
 				m := mocks.NewHandlers(t)
-				m.On("HandleDeleteLastSubscription").Return(nil)
 				return m
 			},
 			update: &tgbotapi.Update{

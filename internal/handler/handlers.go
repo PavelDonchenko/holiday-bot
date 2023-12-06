@@ -38,7 +38,7 @@ type Handlers interface {
 
 	HandleGetTime(chatID int64) tgbotapi.MessageConfig
 	HandleCreateNotification(message *tgbotapi.Message) (string, error)
-	HandleSaveTime(time string, id string) error
+	HandleSaveTime(time string, sub model.Subscription) error
 
 	HandleSendSubscriptions(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleDeleteSub(clb *tgbotapi.CallbackQuery) error

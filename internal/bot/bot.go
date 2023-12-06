@@ -4,10 +4,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 
+	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-
-	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
 )
 

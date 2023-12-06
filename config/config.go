@@ -12,11 +12,12 @@ var (
 )
 
 type Config struct {
-	HolidayAPI HolidayAPI
-	WeatherAPI WeatherAPI
-	Telegram   Telegram
-	Mongo      Mongo
-	Worker     Worker
+	HolidayAPI  HolidayAPI
+	WeatherAPI  WeatherAPI
+	Telegram    Telegram
+	Mongo       Mongo
+	Worker      Worker
+	Application Aplication
 }
 
 type HolidayAPI struct {
@@ -43,6 +44,10 @@ type Mongo struct {
 
 type Worker struct {
 	WorkerDuration int `env:"WORKER_DURATION"`
+}
+
+type Aplication struct {
+	Run string `env:"RUN"`
 }
 
 func MustLoad() Config {

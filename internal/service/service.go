@@ -5,9 +5,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 )
 
 type Service interface {
@@ -92,11 +91,6 @@ func (b Bot) UpdateSubscribeCommand(update *tgbotapi.Update, state model.State) 
 
 	if update.Message.Text != "" {
 		if !isValidTimeFormat(update.Message.Text) {
-			if err := b.handlers.HandleDeleteLastSubscription(); err != nil {
-				return errMsg(update.Message.Chat.ID, "failed save subscription")
-			}
-
-			state[update.Message.Chat.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
 			return errMsg(update.Message.Chat.ID, "wrong time format, please use correct ('08:00')")
 		}
 

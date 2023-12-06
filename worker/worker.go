@@ -62,13 +62,14 @@ func (w *Worker) process(ctx context.Context) {
 		w.errChan <- err
 	}
 
-	for _, subscription := range subscriptions {
-		currentTime := time.Now().Format("15:04")
-		if subscription.NotifyTime != currentTime {
+	for i, _ := range subscriptions {
+		currentTime := time.Now().UTC().Format("15:04")
+		subTime := subscriptions[i].NotifyTime.Format("15:04")
+		if subTime != currentTime {
 			continue
 		}
 
-		forecast, err := w.fetcher.GetForecast("", fmt.Sprint(subscription.Longitude), fmt.Sprint(subscription.Latitude))
+		forecast, err := w.fetcher.GetForecast("", fmt.Sprint(subscriptions[i].Longitude), fmt.Sprint(subscriptions[i].Latitude))
 		if err != nil {
 			w.errChan <- err
 		}
@@ -78,7 +79,7 @@ func (w *Worker) process(ctx context.Context) {
 			w.errChan <- err
 		}
 
-		m := tgbotapi.NewMessage(subscription.ChatID, msg)
+		m := tgbotapi.NewMessage(subscriptions[i].ChatID, msg)
 		m.ParseMode = tgbotapi.ModeHTML
 
 		_, err = w.api.Send(m)

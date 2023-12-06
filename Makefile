@@ -5,11 +5,8 @@ lint:
 	golangci-lint run
 	go vet ./...
 
-run_worker:
-	go run cmd/main.go worker
-
-run_bot:
-	go run cmd/main.go bot
+run:
+	go run cmd/main.go
 
 compose_up:
 	docker-compose -f docker-compose.yml up --build --remove-orphans

@@ -6,10 +6,9 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
-
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 )
 
 const (
@@ -49,10 +48,10 @@ type Handlers interface {
 }
 
 type Handler struct {
+	ctx     context.Context
 	log     *logrus.Logger
 	fetcher client.Fetcher
 	db      storage.Storage
-	ctx     context.Context
 }
 
 func New(ctx context.Context, log *logrus.Logger, fetcher client.Fetcher, db storage.Storage) *Handler {

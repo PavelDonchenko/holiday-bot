@@ -42,7 +42,12 @@ func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, e
 }
 
 func (h *Handler) HandleSaveTime(timeToSave, id string) error {
-	if err := h.db.UpdateTime(h.ctx, timeToSave, id); err != nil {
+	t, err := time.Parse("15:04", timeToSave)
+	if err != nil {
+		h.log.Errorf("error parse time, err: %v", err)
+		return err
+	}
+	if err := h.db.UpdateTime(h.ctx, t.UTC(), id); err != nil {
 		h.log.Errorf("error save time, err: %v", err)
 		return err
 	}

@@ -71,7 +71,7 @@ func TestHandler_HandleGetHolidays(t *testing.T) {
 			name: "ok",
 			fetcher: func(t *testing.T) client.Fetcher {
 				m := mocks.NewFetcher(t)
-				m.On("GetHolidays", time.Now(), "USA").Return([]model.Holiday{{Name: "Thanksgiving"}}, nil)
+				m.On("GetHolidays", mock.IsType(time.Time{}), "USA").Return([]model.Holiday{{Name: "Thanksgiving"}}, nil)
 				return m
 			},
 			want: "USA today holidays: \nThanksgiving\n",

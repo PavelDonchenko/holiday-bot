@@ -11,16 +11,14 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sirupsen/logrus"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/worker"
-
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/db"
-
 	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/bot"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/handler"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/service"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/db"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/worker"
 )
 
 func main() {
@@ -54,11 +52,7 @@ func main() {
 
 	botService := service.New(handlers)
 
-	if len(os.Args) < 2 {
-		usage()
-	}
-
-	switch os.Args[1] {
+	switch cfg.Application.Run {
 	case "bot":
 		holidayBot := bot.New(botAPI, cfg, botService, logger)
 
@@ -66,8 +60,8 @@ func main() {
 		logger.Info("Bot successfully created")
 	case "worker":
 		w := worker.New(botAPI, mongoClient, cfg, logger, rClient)
-		go w.Run(ctx)
-		logger.Info("Worker successfully started")
+		logger.Info("Worker starting...")
+		w.Run(ctx)
 	}
 
 	quit := make(chan os.Signal, 1)

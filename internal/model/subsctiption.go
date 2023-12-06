@@ -7,6 +7,6 @@ type Subscription struct {
 	ChatID     int64     `bson:"chat_id"`
 	Longitude  float64   `bson:"longitude"`
 	Latitude   float64   `bson:"latitude"`
-	NotifyTime string    `bson:"notify_time"`
+	NotifyTime time.Time `bson:"notify_time"`
 	CreatedAt  time.Time `bson:"created_at"`
 }

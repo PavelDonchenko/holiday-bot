@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +15,7 @@ import (
 //go:generate mockery --name=Storage --output=mock --case=underscore
 type Storage interface {
 	Save(ctx context.Context, sub model.Subscription) (string, error)
-	UpdateTime(ctx context.Context, time, id string) error
+	UpdateTime(ctx context.Context, time time.Time, id string) error
 	GetSubscriptions(ctx context.Context, chatID int64) ([]model.Subscription, error)
 	GetLastSubscription(ctx context.Context) (model.Subscription, error)
 	DeleteSubscription(ctx context.Context, long, lat float64, time string) error
@@ -38,7 +39,7 @@ func (m *Mongo) Save(ctx context.Context, sub model.Subscription) (string, error
 	return sub.ID, nil
 }
 
-func (m *Mongo) UpdateTime(ctx context.Context, time, id string) error {
+func (m *Mongo) UpdateTime(ctx context.Context, time time.Time, id string) error {
 	_, err := m.client.UpdateOne(
 		ctx,
 		bson.D{{Key: "_id", Value: id}},
@@ -92,8 +93,7 @@ func (m *Mongo) DeleteLastSubscription(ctx context.Context) error {
 	opt.SetSort(bson.D{{Key: "created_at", Value: -1}})
 
 	var sub model.Subscription
-	err := m.client.FindOneAndDelete(ctx, bson.D{}, opt).Decode(&sub)
-	if err != nil {
+	if err := m.client.FindOneAndDelete(ctx, bson.D{}, opt).Decode(&sub); err != nil {
 		return err
 	}
 
@@ -106,8 +106,7 @@ func (m *Mongo) GetLastSubscription(ctx context.Context) (model.Subscription, er
 	opt := options.FindOne()
 	opt.SetSort(bson.D{{Key: "created_at", Value: -1}})
 
-	err := m.client.FindOne(ctx, bson.D{}, opt).Decode(&sub)
-	if err != nil {
+	if err := m.client.FindOne(ctx, bson.D{}, opt).Decode(&sub); err != nil {
 		return model.Subscription{}, err
 	}
 

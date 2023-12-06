@@ -13,23 +13,6 @@ import (
 	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 )
 
-func (h *Handler) HandleNotification(message *tgbotapi.Message) tgbotapi.MessageConfig {
-	menuKeyboard := tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(AddNotifyBtn),
-			tgbotapi.NewKeyboardButton(UpdateNotifyBtn),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(DeleteNotifyBtn),
-		),
-	)
-
-	msg := tgbotapi.NewMessage(message.Chat.ID, "What do you want:")
-	msg.ReplyMarkup = menuKeyboard
-
-	return msg
-}
-
 func (h *Handler) HandleGetTime(chatID int64) tgbotapi.MessageConfig {
 	msg := tgbotapi.NewMessage(chatID, "Please type the time you want to receive notification (IN '13:00' FORMAT):")
 
@@ -37,12 +20,7 @@ func (h *Handler) HandleGetTime(chatID int64) tgbotapi.MessageConfig {
 }
 
 func (h *Handler) HandleDeleteLastSubscription() error {
-	err := h.db.DeleteLastSubscription(h.ctx)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return h.db.DeleteLastSubscription(h.ctx)
 }
 
 func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, error) {
@@ -64,8 +42,7 @@ func (h *Handler) HandleCreateNotification(message *tgbotapi.Message) (string, e
 }
 
 func (h *Handler) HandleSaveTime(timeToSave, id string) error {
-	err := h.db.UpdateTime(h.ctx, timeToSave, id)
-	if err != nil {
+	if err := h.db.UpdateTime(h.ctx, timeToSave, id); err != nil {
 		h.log.Errorf("error save time, err: %v", err)
 		return err
 	}
@@ -74,11 +51,16 @@ func (h *Handler) HandleSaveTime(timeToSave, id string) error {
 }
 
 func (h *Handler) HandleSendSubscriptions(message *tgbotapi.Message) tgbotapi.MessageConfig {
-	subs, _ := h.db.GetSubscriptions(h.ctx, message.Chat.ID)
-
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	var msg tgbotapi.MessageConfig
-	if subs != nil {
+
+	subs, err := h.db.GetSubscriptions(h.ctx, message.Chat.ID)
+	if err != nil {
+		msg = tgbotapi.NewMessage(message.Chat.ID, "failed get subscriptions")
+		return msg
+	}
+
+	if len(subs) > 0 {
 		for _, sub := range subs {
 			buttonText := fmt.Sprintf("Longitude:%v, Latitude:%v, time:%s", sub.Longitude, sub.Latitude, sub.NotifyTime)
 			btn := tgbotapi.NewInlineKeyboardButtonData(buttonText, buttonText)
@@ -102,12 +84,7 @@ func (h *Handler) HandleDeleteSub(clb *tgbotapi.CallbackQuery) error {
 		return err
 	}
 
-	err = h.db.DeleteSubscription(h.ctx, long, lat, notificationTime)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return h.db.DeleteSubscription(h.ctx, long, lat, notificationTime)
 }
 
 func (h *Handler) HandleGetLastSubscription() (model.Subscription, error) {

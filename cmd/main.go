@@ -7,10 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/worker"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/sirupsen/logrus"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/worker"
 
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/storage"
 	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/db"
@@ -61,7 +62,7 @@ func main() {
 	case "bot":
 		holidayBot := bot.New(botAPI, cfg, botService, logger)
 
-		holidayBot.Run(ctx)
+		holidayBot.Run()
 		logger.Info("Bot successfully created")
 	case "worker":
 		w := worker.New(botAPI, mongoClient, cfg, logger, rClient)

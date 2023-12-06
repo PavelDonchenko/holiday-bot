@@ -27,6 +27,7 @@ const (
 
 var _ Handlers = (*Handler)(nil)
 
+//go:generate mockery --name=Handlers --output=mock --case=underscore
 type Handlers interface {
 	HandleStart(message *tgbotapi.Message) tgbotapi.MessageConfig
 
@@ -37,7 +38,6 @@ type Handlers interface {
 	HandleGetWeatherByCoordinate(message *tgbotapi.Message) tgbotapi.MessageConfig
 
 	HandleGetTime(chatID int64) tgbotapi.MessageConfig
-	HandleNotification(message *tgbotapi.Message) tgbotapi.MessageConfig
 	HandleCreateNotification(message *tgbotapi.Message) (string, error)
 	HandleSaveTime(time string, id string) error
 

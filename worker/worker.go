@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/config"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/client"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 )
 
 type Worker struct {

@@ -11,6 +11,7 @@ import (
 	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
 )
 
+//go:generate mockery --name=Storage --output=mock --case=underscore
 type Storage interface {
 	Save(ctx context.Context, sub model.Subscription) (string, error)
 	UpdateTime(ctx context.Context, time, id string) error

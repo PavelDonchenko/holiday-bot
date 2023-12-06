@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"context"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 
@@ -43,7 +41,7 @@ func New(api *tgbotapi.BotAPI, cfg config.Config, botService service.Service, lo
 	}
 }
 
-func (b *Bot) Run(ctx context.Context) {
+func (b *Bot) Run() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = b.cfg.Telegram.UpdateConfigTimeout
 
@@ -85,31 +83,31 @@ func (b *Bot) Run(ctx context.Context) {
 
 	go func() {
 		for update := range b.regularCommands {
-			b.service.UpdateRegularCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
+			msgChan <- b.service.UpdateRegularCommand(update.Message, update.Message.Chat.ID, b.userState)
 		}
 	}()
 
 	go func() {
 		for update := range b.holidayCommands {
-			b.service.UpdateHolidayCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
+			msgChan <- b.service.UpdateHolidayCommand(update.Message, update.Message.Chat.ID, b.userState)
 		}
 	}()
 
 	go func() {
 		for update := range b.weatherCommands {
-			b.service.UpdateWeatherCommand(update.Message, update.Message.Chat.ID, b.userState, msgChan)
+			msgChan <- b.service.UpdateWeatherCommand(update.Message, update.Message.Chat.ID, b.userState)
 		}
 	}()
 
 	go func() {
 		for update := range b.subscribeCommands {
-			b.service.UpdateSubscribeCommand(&update, b.userState, msgChan)
+			msgChan <- b.service.UpdateSubscribeCommand(&update, b.userState)
 		}
 	}()
 
 	go func() {
 		for update := range b.unsubscribeCommands {
-			b.service.UpdateUnsubscribeCommand(&update, b.userState, msgChan)
+			msgChan <- b.service.UpdateUnsubscribeCommand(&update, b.userState)
 		}
 	}()
 

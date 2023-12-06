@@ -3,8 +3,9 @@ package handler
 import (
 	"fmt"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"git.foxminded.ua/foxstudent106361/holiday-bot/pkg/utils"
 )
 
 func (h *Handler) HandleSendLocation(message *tgbotapi.Message) tgbotapi.MessageConfig {

@@ -11,11 +11,11 @@ import (
 )
 
 type Service interface {
-	UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig)
-	UpdateHolidayCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig)
-	UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig)
-	UpdateSubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
-	UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig)
+	UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig
+	UpdateHolidayCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig
+	UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig
+	UpdateSubscribeCommand(update *tgbotapi.Update, state model.State) tgbotapi.MessageConfig
+	UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State) tgbotapi.MessageConfig
 }
 
 type Bot struct {
@@ -26,11 +26,11 @@ func New(handlers handler.Handlers) *Bot {
 	return &Bot{handlers: handlers}
 }
 
-func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig) {
+func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig {
 	switch message.Text {
 	case handler.StartMenu:
 		msg := b.handlers.HandleStart(message)
-		msgChan <- msg
+		return msg
 	case handler.HolidayMenu:
 		msg := b.handlers.HandleFlags(message)
 
@@ -38,7 +38,7 @@ func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state
 		activeFlags.HolidayActiveFlag = true
 		state[chatID] = activeFlags
 
-		msgChan <- msg
+		return msg
 	case handler.WeatherMenu:
 		msg := b.handlers.HandleSendLocation(message)
 
@@ -46,7 +46,7 @@ func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state
 		activeFlags.WeatherActiveFlag = true
 		state[chatID] = activeFlags
 
-		msgChan <- msg
+		return msg
 	case handler.SubscribeMenu:
 		msg := b.handlers.HandleSendLocation(message)
 
@@ -54,79 +54,80 @@ func (b Bot) UpdateRegularCommand(message *tgbotapi.Message, chatID int64, state
 		activeFlags.SubscribeActiveFlag = true
 		state[chatID] = activeFlags
 
-		msgChan <- msg
+		return msg
 	case handler.UnsubscribeMenu:
 		msg := b.handlers.HandleSendSubscriptions(message)
 
 		activeFlags := state[chatID]
 		activeFlags.UnsubscribeActiveFlag = true
 		state[chatID] = activeFlags
-		msgChan <- msg
+		return msg
 	default:
-		msgChan <- tgbotapi.NewMessage(message.Chat.ID, "unknown command")
+		return tgbotapi.NewMessage(message.Chat.ID, "unknown command")
 	}
 }
 
-func (b Bot) UpdateHolidayCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig) {
-	msgChan <- b.handlers.HandleGetHolidays(message)
+func (b Bot) UpdateHolidayCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig {
 	state[chatID] = model.ActiveFlags{HolidayActiveFlag: false}
+	return b.handlers.HandleGetHolidays(message)
 }
 
-func (b Bot) UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state model.State, msgChan chan tgbotapi.MessageConfig) {
+func (b Bot) UpdateWeatherCommand(message *tgbotapi.Message, chatID int64, state model.State) tgbotapi.MessageConfig {
 	msg := b.handlers.HandleGetWeatherByCoordinate(message)
 	msg.ParseMode = tgbotapi.ModeHTML
-	msgChan <- msg
 	state[chatID] = model.ActiveFlags{WeatherActiveFlag: false}
+	return msg
 }
 
-func (b Bot) UpdateSubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig) {
+func (b Bot) UpdateSubscribeCommand(update *tgbotapi.Update, state model.State) tgbotapi.MessageConfig {
 	if update.Message != nil {
 		if update.Message.Location != nil {
 			_, err := b.handlers.HandleCreateNotification(update.Message)
 			if err != nil {
-				msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
+				return errMsg(update.Message.Chat.ID, "failed save subscription")
 			}
-			msgChan <- b.handlers.HandleGetTime(update.Message.Chat.ID)
+			return b.handlers.HandleGetTime(update.Message.Chat.ID)
 		}
 	}
 
 	if update.Message.Text != "" {
 		if !isValidTimeFormat(update.Message.Text) {
-			err := b.handlers.HandleDeleteLastSubscription()
-			if err != nil {
-				msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
+			if err := b.handlers.HandleDeleteLastSubscription(); err != nil {
+				return errMsg(update.Message.Chat.ID, "failed save subscription")
 			}
 
-			msgChan <- errMsg(update.Message.Chat.ID, "wrong time format, please use correct ('08:00')")
 			state[update.Message.Chat.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
-			return
+			return errMsg(update.Message.Chat.ID, "wrong time format, please use correct ('08:00')")
 		}
 
 		sub, err := b.handlers.HandleGetLastSubscription()
 		if err != nil {
-			msgChan <- errMsg(update.Message.Chat.ID, "failed save subscription")
+			return errMsg(update.Message.Chat.ID, "failed save subscription")
 		}
 
-		err = b.handlers.HandleSaveTime(update.Message.Text, sub.ID)
-		if err != nil {
-			msgChan <- errMsg(update.Message.Chat.ID, "failed save time")
+		if err = b.handlers.HandleSaveTime(update.Message.Text, sub.ID); err != nil {
+			return errMsg(update.Message.Chat.ID, "failed save time")
 		}
 
 		state[update.Message.Chat.ID] = model.ActiveFlags{SubscribeActiveFlag: false}
-		msgChan <- tgbotapi.NewMessage(update.Message.Chat.ID, "Subscription successfully created")
+		return tgbotapi.NewMessage(update.Message.Chat.ID, "Subscription successfully created")
 	}
+
+	return tgbotapi.MessageConfig{}
 }
 
-func (b Bot) UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State, msgChan chan tgbotapi.MessageConfig) {
+func (b Bot) UpdateUnsubscribeCommand(update *tgbotapi.Update, state model.State) tgbotapi.MessageConfig {
 	if update.CallbackQuery != nil {
 		err := b.handlers.HandleDeleteSub(update.CallbackQuery)
 		if err != nil {
-			msgChan <- errMsg(update.Message.Chat.ID, "failed delete subscription")
+			return errMsg(update.Message.Chat.ID, "failed delete subscription")
 		}
 
 		state[update.CallbackQuery.From.ID] = model.ActiveFlags{UnsubscribeActiveFlag: false}
-		msgChan <- tgbotapi.NewMessage(update.CallbackQuery.From.ID, "Subscription successfully deleted")
+		return tgbotapi.NewMessage(update.CallbackQuery.From.ID, "Subscription successfully deleted")
 	}
+
+	return tgbotapi.MessageConfig{}
 }
 
 func errMsg(chatID int64, text string) tgbotapi.MessageConfig {

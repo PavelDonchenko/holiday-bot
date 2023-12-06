@@ -1,52 +1,25 @@
 package handler
 
 import (
+	"context"
 	"testing"
 
-	"git.foxminded.ua/foxstudent106361/holiday-bot/internal/model"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestBuildMsg(t *testing.T) {
-	tests := []struct {
-		name     string
-		holidays []model.Holiday
-		country  string
-		expected string
-	}{
-		{
-			name:     "NoHolidays",
-			holidays: []model.Holiday{},
-			country:  "USA",
-			expected: "Country USA, doesn't have any holiday today",
-		},
-		{
-			name: "OneHoliday",
-			holidays: []model.Holiday{
-				{Name: "Thanksgiving"},
-			},
-			country:  "USA",
-			expected: "USA today holidays: \nThanksgiving\n",
-		},
-		{
-			name: "MultipleHolidays",
-			holidays: []model.Holiday{
-				{Name: "Christmas"},
-				{Name: "New Year"},
-				{Name: "Independence Day"},
-			},
-			country:  "USA",
-			expected: "USA today holidays: \nChristmas\nNew Year\nIndependence Day\n",
-		},
+func TestHandler_HandleStart(t *testing.T) {
+	h := &Handler{
+		log: logrus.New(),
+		ctx: context.Background(),
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			result := buildMsg(tt.holidays, tt.country)
-			if result != tt.expected {
-				t.Errorf("Unexpected result for %s:\nExpected: %s\nActual: %s", tt.name, tt.expected, result)
-			}
-		})
+	message := tgbotapi.Message{
+		Chat: &tgbotapi.Chat{ID: 123},
 	}
+
+	msg := h.HandleStart(&message)
+
+	assert.Equal(t, "Press menu button to see command list", msg.Text)
 }

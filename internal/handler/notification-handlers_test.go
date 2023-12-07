@@ -178,3 +178,43 @@ func TestParseLocationTime(t *testing.T) {
 		})
 	}
 }
+
+func Test_timeToUTC(t *testing.T) {
+	type args struct {
+		userTime string
+		lat      float64
+		lon      float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{
+			name: "12:00 Lviv",
+			args: args{
+				userTime: "12:00",
+				lat:      49.87,
+				lon:      23.95,
+			},
+			want: time.Date(0, 1, 1, 10, 00, 0, 0, time.UTC),
+		},
+		{
+			name: "10:00 New York",
+			args: args{
+				userTime: "10:00",
+				lat:      40.73,
+				lon:      -73.93,
+			},
+			want: time.Date(0, 1, 1, 15, 00, 0, 0, time.UTC),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			utc, err := timeToUTC(tt.args.userTime, tt.args.lat, tt.args.lon)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, utc)
+
+		})
+	}
+}

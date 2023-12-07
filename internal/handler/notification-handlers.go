@@ -145,7 +145,10 @@ func timeToUTC(userTime string, lat, lon float64) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	userTimeWithZone := time.Date(0, 1, 1, userTimeParsed.Hour(), userTimeParsed.Minute(), 0, 0, location)
+	_, offset := time.Now().In(location).Zone()
+	loc := time.FixedZone(zone[0], offset)
+
+	userTimeWithZone := time.Date(0, 1, 1, userTimeParsed.Hour(), userTimeParsed.Minute(), 0, 0, loc)
 
 	utcTime := userTimeWithZone.UTC()
 
